@@ -2,8 +2,8 @@
 package auth
 
 import (
+	"github.com/dukryung/microservice/server/types"
 	"github.com/gin-gonic/gin"
-	"microservice/server/types"
 )
 
 type Server struct {

@@ -2,7 +2,7 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
-	"microservice/server/auth/rest/endpoint"
+	"github.com/microservice/server/auth/rest/endpoint"
 )
 
 type Handler struct {

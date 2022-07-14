@@ -2,8 +2,8 @@ package app
 
 import (
 	"fmt"
+	"github.com/dukryung/microservice/server/auth"
 	"github.com/dukryung/microservice/server/types"
-	"microservice/server/auth"
 )
 
 type App struct {
