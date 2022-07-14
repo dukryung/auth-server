@@ -1,8 +1,8 @@
 package rest
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/dukryung/microservice/server/auth/rest/endpoint"
+	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {

@@ -4,11 +4,12 @@ package auth
 import (
 	"github.com/dukryung/microservice/server/types"
 	"github.com/gin-gonic/gin"
+	"github.com/dukryung/microservice/server/auth/rest"
 )
 
 type Server struct {
-	router *gin.Engine
-
+	router      *gin.Engine
+	restHandler *rest.Handler
 }
 
 func NewServer() *Server {
@@ -16,8 +17,8 @@ func NewServer() *Server {
 
 	router := gin.Default()
 	s.router = router
-
-	HandleManager := types.NewHandlerManager()
+	s.restHandler = rest.NewHandler()
+	HandleManager := types.NewHandlerManager(s.restHandler)
 	HandleManager.RegisterRoute(s.router)
 
 	return s
@@ -30,4 +31,3 @@ func (s *Server) Run() {
 func (s *Server) Close() {
 	s.Close()
 }
-
