@@ -1,7 +1,7 @@
 package main
 
 import (
-	"microservice/server/app"
+	"github.com/dukryung/microservice/server/app"
 	"os"
 	"os/signal"
 	"syscall"
