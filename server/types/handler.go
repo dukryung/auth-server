@@ -10,7 +10,7 @@ type HandlerManager struct{
 	handlers []Handler
 }
 
-func NewHandlerManager() *HandlerManager {
+func NewHandlerManager(handlers ...Handler) *HandlerManager {
 	handleManager := &HandlerManager{}
 
 	return handleManager
