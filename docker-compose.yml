@@ -1,0 +1,17 @@
+version: '3.7'
+
+services:
+  postgresql:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres5432
+    labels:
+      - "name=postgresql"
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: qwer1234
+      POSTGRES_DB: sync-server
+    volumes:
+      - ./db/:/docker-entrypoint-initdb.d/
