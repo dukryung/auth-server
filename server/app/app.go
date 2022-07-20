@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/dukryung/microservice/server/auth"
 	"github.com/dukryung/microservice/server/types"
+	"github.com/dukryung/microservice/server/types/configs"
+	_ "github.com/lib/pq"
 )
 
 type App struct {
@@ -13,7 +15,12 @@ type App struct {
 func NewApp() *App {
 	app := &App{}
 
-	authServer := auth.NewServer()
+	authConfig, err := configs.LoadAuthConfig()
+	if err != nil {
+		fmt.Println("err : ", err)
+	}
+
+	authServer := auth.NewServer(authConfig)
 
 	app.servers = append(app.servers, authServer)
 

@@ -1,24 +1,28 @@
 package rest
 
 import (
+	"database/sql"
 	"github.com/dukryung/microservice/server/auth/rest/endpoint"
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
+	EndPoint *endpoint.EndPoint
 }
 
-func NewHandler() *Handler {
+func NewHandler(db *sql.DB) *Handler {
 	h := &Handler{}
+	h.EndPoint = endpoint.NewEndPoint(db)
 
 	return h
 }
 
-func(h *Handler) Run() {
+func (h *Handler) Run() {
 
 }
 
 func (h *Handler) RegisterRoute(router *gin.Engine) {
-	router.GET("/seed", endpoint.GetMnemonic)
-	router.POST("/account", endpoint.RegisterAccount)
+	router.GET("/seed", h.EndPoint.GetMnemonic)
+	router.POST("/account", h.EndPoint.RegisterAccount)
+	router.GET("/verify", h.EndPoint.VerifyAccount)
 }

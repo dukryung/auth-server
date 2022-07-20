@@ -12,6 +12,6 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: qwer1234
-      POSTGRES_DB: sync-server
+      POSTGRES_DB: auth-server
     volumes:
       - ./db/:/docker-entrypoint-initdb.d/

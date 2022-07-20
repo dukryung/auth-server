@@ -2,22 +2,33 @@
 package auth
 
 import (
-	"github.com/dukryung/microservice/server/types"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"github.com/dukryung/microservice/server/auth/rest"
+	"github.com/dukryung/microservice/server/types"
+	"github.com/dukryung/microservice/server/types/configs"
+	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
 	router      *gin.Engine
 	restHandler *rest.Handler
+	authConfig  *configs.AuthConfig
 }
 
-func NewServer() *Server {
-	s := &Server{}
+func NewServer(authConfig *configs.AuthConfig) *Server {
+	s := &Server{
+		authConfig: authConfig,
+	}
 
 	router := gin.Default()
 	s.router = router
-	s.restHandler = rest.NewHandler()
+
+	database, err := authConfig.DB.GetDBConnection()
+	if err != nil {
+		fmt.Println("err : ", err)
+	}
+
+	s.restHandler = rest.NewHandler(database)
 	HandleManager := types.NewHandlerManager(s.restHandler)
 	HandleManager.RegisterRoute(s.router)
 
@@ -25,7 +36,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) Run() {
-	s.router.Run(":13579")
+	s.router.Run(fmt.Sprintf(":%d",s.authConfig.Port))
 }
 
 func (s *Server) Close() {
