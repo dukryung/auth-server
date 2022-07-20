@@ -112,8 +112,6 @@ func (end *EndPoint) VerifyAccount(c *gin.Context) {
 	tx, err := end.DB.Begin()
 	if err != nil {
 		c.JSON(400, err)
-		fmt.Println("err : ",err)
-
 		return
 	}
 	defer tx.Rollback()
@@ -136,14 +134,15 @@ func (end *EndPoint) VerifyAccount(c *gin.Context) {
 	err = stmt.QueryRow(mnemonic).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.DeviceToken, &clientAccount.ProfileImage)
 	if err != nil {
 		c.JSON(400, err)
+		fmt.Println("err : ",err)
 		return
 	}
+	fmt.Println(clientAccount)
 	err = tx.Commit()
 	if err != nil {
 		c.JSON(400, err)
 		return
 	}
-
 	c.JSON(200, struct {
 		message string `json:"message"`
 		status  int    `json:"status"`
