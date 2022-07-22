@@ -23,6 +23,6 @@ func (h *Handler) Run() {
 
 func (h *Handler) RegisterRoute(router *gin.Engine) {
 	router.GET("/seed", h.EndPoint.GetMnemonic)
-	router.POST("/account", h.EndPoint.RegisterAccount)
-	router.GET("/verify", h.EndPoint.VerifyAccount)
+	router.POST("/account/register", h.EndPoint.RegisterAccount)
+	router.GET("/account/login", h.EndPoint.LoginAccount)
 }

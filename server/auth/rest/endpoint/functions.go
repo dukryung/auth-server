@@ -2,9 +2,11 @@ package endpoint
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/cosmos/go-bip39"
 	"github.com/dukryung/microservice/server/types"
 	"github.com/gin-gonic/gin"
+	"io"
 	"io/ioutil"
 )
 
@@ -49,10 +51,10 @@ func (end *EndPoint) RegisterAccount(c *gin.Context) {
 	}
 
 	accountInfo := types.Account{
-		Email:       c.PostForm("email"),
-		Mnemonic:    c.PostForm("mnemonic"),
-		NickName:    c.PostForm("nickname"),
-		DeviceToken: c.PostForm("device_token"),
+		Email:    c.PostForm("email"),
+		Mnemonic: c.PostForm("mnemonic"),
+		NickName: c.PostForm("nickname"),
+		DeviceID: c.PostForm("device-id"),
 	}
 
 	file, _, err := c.Request.FormFile("profile-image")
@@ -76,12 +78,31 @@ func (end *EndPoint) RegisterAccount(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(c, `INSERT INTO client_account 
-											(email, mnemonic, nickname, device_token, profile_image) 
-											 VALUES ($1,$2,$3,$4,$5)`)
+	stmt, err := tx.PrepareContext(c, `INSERT INTO device_assignment (email,mnemonic,device_id)
+											VALUES ($1,$2,$3)
+											ON CONFLICT (device_id) DO UPDATE SET (email,mnemonic) = (excluded.email, excluded.mnemonic);`)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
 	defer stmt.Close()
 
-	_, err = stmt.Exec(accountInfo.Email, accountInfo.Mnemonic, accountInfo.NickName, accountInfo.DeviceToken, accountInfo.ProfileImage)
+	_, err = stmt.Exec(accountInfo.Email, accountInfo.Mnemonic, accountInfo.DeviceID)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	stmt, err = tx.PrepareContext(c, `INSERT INTO client_account
+											(email, mnemonic, nickname, profile_image) 
+											 VALUES ($1,$2,$3,$4)`)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	_, err = stmt.Exec(accountInfo.Email, accountInfo.Mnemonic, accountInfo.NickName, accountInfo.ProfileImage)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
@@ -98,7 +119,7 @@ func (end *EndPoint) RegisterAccount(c *gin.Context) {
 }
 
 //VerifyAccount verify validation of account.
-func (end *EndPoint) VerifyAccount(c *gin.Context) {
+func (end *EndPoint) LoginAccount(c *gin.Context) {
 	var clientAccount = types.Account{}
 
 	mnemonic := c.DefaultQuery("mnemonic", "none")
@@ -114,11 +135,34 @@ func (end *EndPoint) VerifyAccount(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(c, `SELECT 
+	stmt, err := tx.PrepareContext(c, `SELECT
+								email,
+								mnemonic
+								FROM device_assignment
+								WHERE device_id = $1 AND email = $2 AND mnemonic = $3`)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		fmt.Println("err 1!!!!!!!!!:", err)
+		return
+	} else if err == io.EOF {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		fmt.Println("err 2@@@@@@@@@@:", err)
+		return
+	}
+
+	defer stmt.Close()
+
+	var email, mnemonic string
+	err = stmt.QueryRow(mnemonic).Scan(&email, &mnemonic)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	stmt, err = tx.PrepareContext(c, `SELECT 
 								email,
 								mnemonic,
 								nickname,
-								device_token,
 								profile_image
 								FROM client_account 
 								WHERE mnemonic = $1`)
@@ -127,9 +171,7 @@ func (end *EndPoint) VerifyAccount(c *gin.Context) {
 		return
 	}
 
-	defer stmt.Close()
-
-	err = stmt.QueryRow(mnemonic).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.DeviceToken, &clientAccount.ProfileImage)
+	err = stmt.QueryRow(mnemonic).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.ProfileImage)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
