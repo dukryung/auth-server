@@ -118,13 +118,25 @@ func (end *EndPoint) RegisterAccount(c *gin.Context) {
 	return
 }
 
-//VerifyAccount verify validation of account.
+//LoginAccount verify validation of account.
 func (end *EndPoint) LoginAccount(c *gin.Context) {
 	var clientAccount = types.Account{}
 
 	mnemonic := c.DefaultQuery("mnemonic", "none")
 	if mnemonic == "none" {
 		c.JSON(400, types.SetResponse("mnemonic empty err", 400, true, nil))
+		return
+	}
+
+	deviceID := c.DefaultQuery("device_id", "none")
+	if deviceID == "none" {
+		c.JSON(400, types.SetResponse("device id empty err", 400, true, nil))
+		return
+	}
+
+	email := c.DefaultQuery("email", "none")
+	if email == "none" {
+		c.JSON(400, types.SetResponse("email empty err", 400, true, nil))
 		return
 	}
 
@@ -136,24 +148,22 @@ func (end *EndPoint) LoginAccount(c *gin.Context) {
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(c, `SELECT
-								email,
-								mnemonic
+								email
 								FROM device_assignment
 								WHERE device_id = $1 AND email = $2 AND mnemonic = $3`)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
-		fmt.Println("err 1!!!!!!!!!:", err)
+		fmt.Println("err :", err)
 		return
 	} else if err == io.EOF {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
-		fmt.Println("err 2@@@@@@@@@@:", err)
+		fmt.Println("err :", err)
 		return
 	}
 
 	defer stmt.Close()
 
-	var email, mnemonic string
-	err = stmt.QueryRow(mnemonic).Scan(&email, &mnemonic)
+	err = stmt.QueryRow(deviceID, email, mnemonic).Scan(&email)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
@@ -165,13 +175,13 @@ func (end *EndPoint) LoginAccount(c *gin.Context) {
 								nickname,
 								profile_image
 								FROM client_account 
-								WHERE mnemonic = $1`)
+								WHERE mnemonic = $1 AND email = $2`)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
 	}
 
-	err = stmt.QueryRow(mnemonic).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.ProfileImage)
+	err = stmt.QueryRow(mnemonic, email).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.ProfileImage)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
@@ -185,4 +195,66 @@ func (end *EndPoint) LoginAccount(c *gin.Context) {
 
 	c.JSON(200, types.SetResponse(SUCCESS, 200, false, clientAccount))
 	return
+}
+
+func (end *EndPoint) ImportAccount(c *gin.Context) {
+	var clientAccount = types.Account{}
+	if err := c.BindJSON(&clientAccount); err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	tx, err := end.DB.Begin()
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(c, `INSERT INTO device_assignment (email,mnemonic,device_id)
+											VALUES ($1,$2,$3)
+											ON CONFLICT (mnemonic) DO UPDATE SET device_id = excluded.device_id;`)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		fmt.Println("err : ", err)
+		return
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(clientAccount.Email, clientAccount.Mnemonic, clientAccount.DeviceID)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	stmt, err = tx.PrepareContext(c, `SELECT 
+								email,
+								mnemonic,
+								nickname,
+								profile_image
+								FROM client_account 
+								WHERE mnemonic = $1 AND email = $2`)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+	defer stmt.Close()
+
+	err = stmt.QueryRow(clientAccount.Mnemonic, clientAccount.Email).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.ProfileImage)
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
+		return
+	}
+
+	c.JSON(200, types.SetResponse(SUCCESS, 200, false, clientAccount))
+	return
+
 }

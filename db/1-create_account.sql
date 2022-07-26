@@ -9,7 +9,10 @@ CREATE TABLE IF NOT EXISTS public.client_account
     mnemonic text COLLATE pg_catalog."default" NOT NULL,
     nickname character varying(30) COLLATE pg_catalog."default" NOT NULL,
     profile_image bytea NOT NULL,
-    CONSTRAINT client_account_pkey PRIMARY KEY (id)
+    CONSTRAINT client_account_pkey PRIMARY KEY (id),
+    CONSTRAINT unique_email UNIQUE (email),
+    CONSTRAINT unique_mnemonic UNIQUE (mnemonic),
+    CONSTRAINT unique_nickname UNIQUE (nickname)
 )
 
     TABLESPACE pg_default;
