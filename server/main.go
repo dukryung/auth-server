@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	<- quit
-
+	<-quit
+	app.CloseServer()
 
 }

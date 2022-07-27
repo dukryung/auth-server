@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/cosmos/go-bip39 v1.0.0
+	github.com/fatih/color v1.13.0
 	github.com/gin-gonic/gin v1.8.1
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/lib/pq v1.10.6

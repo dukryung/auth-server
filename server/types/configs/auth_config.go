@@ -10,8 +10,9 @@ const (
 )
 
 type AuthConfig struct {
-	Port int `json:"port"`
-	DB DBConfig `json:"db"`
+	Port int       `json:"port"`
+	DB   DBConfig  `json:"db"`
+	Log  LogConfig `json:"log"`
 }
 
 func LoadAuthConfig() (*AuthConfig, error) {

@@ -10,5 +10,9 @@
     "ssl_mode": "disable",
     "idle_conn": 2,
     "max_conn": 10
+  },
+  "log": {
+    "enable": true,
+    "level": 3
   }
 }
