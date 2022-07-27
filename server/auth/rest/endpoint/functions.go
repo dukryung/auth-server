@@ -96,7 +96,8 @@ func (end *EndPoint) RegisterAccount(c *gin.Context) {
 
 	stmt, err = tx.PrepareContext(c, `INSERT INTO client_account
 											(email, mnemonic, nickname, profile_image) 
-											 VALUES ($1,$2,$3,$4)`)
+											 VALUES ($1,$2,$3,$4)
+											 ON CONFLICT (mnemonic) DO NOTHING`)
 	if err != nil {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
@@ -197,6 +198,7 @@ func (end *EndPoint) LoginAccount(c *gin.Context) {
 	return
 }
 
+//ImportAccount load another account.
 func (end *EndPoint) ImportAccount(c *gin.Context) {
 	var clientAccount = types.Account{}
 	if err := c.BindJSON(&clientAccount); err != nil {
@@ -240,7 +242,6 @@ func (end *EndPoint) ImportAccount(c *gin.Context) {
 		c.JSON(400, types.SetResponse(err.Error(), 400, true, nil))
 		return
 	}
-	defer stmt.Close()
 
 	err = stmt.QueryRow(clientAccount.Mnemonic, clientAccount.Email).Scan(&clientAccount.Email, &clientAccount.Mnemonic, &clientAccount.NickName, &clientAccount.ProfileImage)
 	if err != nil {
